@@ -38,3 +38,4 @@ _deploy/
 scratch/
 tmp/
 *.tmp
+qdrant_storage/
