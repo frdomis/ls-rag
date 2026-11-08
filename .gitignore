@@ -1,0 +1,40 @@
+﻿# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Backup
+*.bak
+*.bak.*
+*.tar.gz
+*.zip
+.git_old_backup/
+
+# Logs
+*.log
+logs/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+_deploy/
+scratch/
+tmp/
+*.tmp

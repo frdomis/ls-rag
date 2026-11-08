@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>专升本智能助手</title>
+    <!-- 引入 Markdown 渲染库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 0 20px; }
+        #chat-box { border: 1px solid #e0e0e0; padding: 20px; min-height: 200px; margin-bottom: 15px; border-radius: 8px; background-color: #f9f9f9; }
+        .message { margin-bottom: 15px; line-height: 1.6; }
+        .user-msg { font-weight: bold; color: #333; }
+        .ai-msg { color: #444; }
+        /* Markdown 基础排版样式 */
+        .ai-msg p { margin: 0.5em 0; }
+        .ai-msg strong { color: #1a73e8; font-weight: bold; }
+        .ai-msg ul, .ai-msg ol { margin: 0.5em 0; padding-left: 20px; }
+        .input-area { display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; outline: none; }
+        input:focus { border-color: #1a73e8; }
+        button { padding: 12px 25px; font-size: 16px; cursor: pointer; background-color: #1a73e8; color: white; border: none; border-radius: 5px; transition: background 0.3s; }
+        button:hover { background-color: #1557b0; }
+    </style>
+</head>
+<body>
+    <h2>专升本政策问答</h2>
+    <div id="chat-box"></div>
+    <div class="input-area">
+        <input type="text" id="question" placeholder="请输入你的问题，例如：2026年报名时间？" onkeypress="if(event.keyCode==13) sendQuestion()">
+        <button onclick="sendQuestion()">发送</button>
+    </div>
+
+    <script>
+        async function sendQuestion() {
+            const input = document.getElementById("question");
+            const chatBox = document.getElementById("chat-box");
+            const question = input.value.trim();
+            
+            if (!question) return;
+
+            // 显示用户发送的问题
+            chatBox.innerHTML += `<div class="message user-msg">你：${question}</div>`;
+            input.value = "";
+
+            // 显示“思考中...”占位符
+            const loadingId = "loading-" + Date.now();
+            chatBox.innerHTML += `<div class="message ai-msg" id="${loadingId}">助手：正在思考中...</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                // 调用后端接口
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: question })
+                });
+
+                const data = await response.json();
+                
+                // 使用 marked 解析 Markdown 并替换占位符
+                const formattedReply = marked.parse(data.reply);
+                document.getElementById(loadingId).innerHTML = `<b>助手：</b>${formattedReply}`;
+                
+            } catch (error) {
+                document.getElementById(loadingId).innerHTML = `<b>助手：</b>抱歉，网络或系统出现了一点小问题，请稍后再试。`;
+            }
+            
+            chatBox.scrollTop = chatBox.scrollHeight; // 自动滚动到底部
+        }
+    </script>
+</body>
+</html>

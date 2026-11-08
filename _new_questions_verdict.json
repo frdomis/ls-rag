@@ -1,0 +1,152 @@
+[
+  {
+    "id": "N1",
+    "question": "跨专业报考审核要交什么材料？",
+    "verdict": "❌ 无答案",
+    "avg_ratio": 0.08,
+    "expected_source": "河南省教育厅",
+    "keypoints": [
+      {
+        "keypoint": "跨专业报考需符合专业对应目录",
+        "ratio": 0.17,
+        "chunk_ids": [
+          "51f50be37c79"
+        ]
+      },
+      {
+        "keypoint": "审核由报考院校负责",
+        "ratio": 0.0,
+        "chunk_ids": []
+      }
+    ],
+    "chunk_ids": [
+      "51f50be37c79"
+    ],
+    "pass": false
+  },
+  {
+    "id": "N2",
+    "question": "建档立卡资格咋认定，对普通批分数线影响大吗？",
+    "verdict": "⚠️ 部分有",
+    "avg_ratio": 0.34,
+    "expected_source": "河南省教育厅",
+    "keypoints": [
+      {
+        "keypoint": "建档立卡考生可享受专升本专项计划",
+        "ratio": 0.43,
+        "chunk_ids": [
+          "3ff5473a00c7",
+          "121c19c6a733",
+          "6a35d4ce6502"
+        ]
+      },
+      {
+        "keypoint": "专项计划单独划定分数线",
+        "ratio": 0.25,
+        "chunk_ids": [
+          "6f313d17c0c0",
+          "7efee4421aff",
+          "3ff5473a00c7"
+        ]
+      }
+    ],
+    "chunk_ids": [
+      "121c19c6a733",
+      "3ff5473a00c7",
+      "6a35d4ce6502",
+      "6f313d17c0c0",
+      "7efee4421aff"
+    ],
+    "pass": false
+  },
+  {
+    "id": "N3",
+    "question": "河南专升本平行志愿真能保底吗，咋有人说还能滑档？",
+    "verdict": "❌ 无答案",
+    "avg_ratio": 0.1,
+    "expected_source": "河南省教育厅",
+    "keypoints": [
+      {
+        "keypoint": "平行志愿按分数优先原则投档",
+        "ratio": 0.2,
+        "chunk_ids": [
+          "a0138ef234ff",
+          "838ebcf722f3",
+          "ce215af180e8"
+        ]
+      },
+      {
+        "keypoint": "不服从调剂或计划已满可能退档",
+        "ratio": 0.0,
+        "chunk_ids": []
+      }
+    ],
+    "chunk_ids": [
+      "838ebcf722f3",
+      "a0138ef234ff",
+      "ce215af180e8"
+    ],
+    "pass": false
+  },
+  {
+    "id": "N4",
+    "question": "报名信息填错了还能改吗，截止前咋操作？",
+    "verdict": "❌ 无答案",
+    "avg_ratio": 0.27,
+    "expected_source": "河南省教育厅",
+    "keypoints": [
+      {
+        "keypoint": "报名信息需在报名截止前修改",
+        "ratio": 0.2,
+        "chunk_ids": [
+          "6afca404e33e"
+        ]
+      },
+      {
+        "keypoint": "具体操作以省教育考试院公告为准",
+        "ratio": 0.33,
+        "chunk_ids": [
+          "873c207582ff",
+          "ee03b3a616be",
+          "540ec1b15650"
+        ]
+      }
+    ],
+    "chunk_ids": [
+      "540ec1b15650",
+      "6afca404e33e",
+      "873c207582ff",
+      "ee03b3a616be"
+    ],
+    "pass": false
+  },
+  {
+    "id": "N5",
+    "question": "民办联合培养和普通民办咋选，毕业证一样不？",
+    "verdict": "❌ 无答案",
+    "avg_ratio": 0.14,
+    "expected_source": "各院校招生章程",
+    "keypoints": [
+      {
+        "keypoint": "联合培养与普通招生的毕业证书相同",
+        "ratio": 0.29,
+        "chunk_ids": [
+          "57d6722738f8",
+          "40013b541144",
+          "d839b92fdbb3"
+        ]
+      },
+      {
+        "keypoint": "培养地点和方式不同",
+        "ratio": 0.0,
+        "chunk_ids": []
+      }
+    ],
+    "chunk_ids": [
+      "40013b541144",
+      "57d6722738f8",
+      "d839b92fdbb3"
+    ],
+    "pass": false
+  }
+]

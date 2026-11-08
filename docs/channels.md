@@ -1,0 +1,2 @@
+https://www.xiaohongshu.com/explore/6aa917cd0000000011034959?xsec_token=ABvK1YEj-Di9LZyK39_8PVw91diIlEdLYIPPg9RCPTwFw=&xsec_source=pc_user
+标题：专升本不报班上哪找网课？小徐分析对专升本及对其看法🐝专升本自学｜我不会告诉你，我只花了150💰两个室友专升本失败的共同原因（请避雷）专科生的愚蠢行为，大一就开始备考专升本 这才叫专升本 专升本大忌！只看网课和刷题是考不上的！4分钟彻底搞懂专升本，专科大一大二必看！
