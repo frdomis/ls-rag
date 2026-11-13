@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>河南专升本 Agent</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    max-width: 880px; margin: 0 auto; padding: 24px 20px 110px;
+    background: #f5f6f8; color: #1a1a1a; line-height: 1.7;
+  }
+  header { text-align: center; margin-bottom: 18px; }
+  h1 { font-size: 27px; margin: 0 0 6px; }
+  .sub { color: #888; font-size: 13px; }
+  .sub a { color: #1a73e8; text-decoration: none; }
+
+  .bar {
+    display: flex; gap: 16px; align-items: center; justify-content: center;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 10px 16px; margin-bottom: 16px; font-size: 13.5px;
+  }
+  .bar label { cursor: pointer; }
+  .bar .mode { color: #6b7280; }
+  .bar strong { color: #1a73e8; }
+
+  .examples { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .examples button {
+    background: #fff; border: 1px solid #d0d5dd; border-radius: 16px;
+    padding: 6px 13px; font-size: 12.5px; cursor: pointer; color: #374151;
+  }
+  .examples button:hover { border-color: #1a73e8; color: #1a73e8; }
+
+  #chat { min-height: 160px; margin-bottom: 16px; }
+  .turn { margin-bottom: 18px; }
+  .q {
+    background: #1a73e8; color: #fff; padding: 10px 14px;
+    border-radius: 14px 14px 4px 14px; display: inline-block;
+    max-width: 85%; float: right; clear: both; margin-bottom: 10px;
+    word-break: break-word;
+  }
+  .q::after { content: ""; display: block; clear: both; }
+
+  .a {
+    background: #fff; padding: 14px 16px; border-radius: 14px 14px 14px 4px;
+    border: 1px solid #e5e7eb; clear: both; margin-top: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04); position: relative;
+  }
+  .a.refused { background: #fff8e6; border-color: #f5c26b; }
+  .a.refused::before {
+    content: "⚠ 未找到答案";
+    position: absolute; top: -10px; left: 14px;
+    background: #f5c26b; color: #7a4a00; font-size: 11.5px; font-weight: 600;
+    padding: 1px 9px; border-radius: 8px;
+  }
+  .a.degraded { background: #fef3f2; border-color: #fda29b; }
+  .a.degraded::before {
+    content: "⚠ 降级模式";
+    position: absolute; top: -10px; left: 14px;
+    background: #fda29b; color: #7a271a; font-size: 11.5px; font-weight: 600;
+    padding: 1px 9px; border-radius: 8px;
+  }
+
+  .a .md p { margin: .5em 0; }
+  .a .md strong { color: #1a73e8; }
+  .a .md ul, .a .md ol { margin: .5em 0; padding-left: 1.4em; }
+  .a .md code { background: #f0f2f5; padding: 1px 5px; border-radius: 3px; }
+
+  /* Agent 轨迹（可观测性） */
+  .trace {
+    margin-top: 10px; padding: 8px 10px; background: #f8f9fb;
+    border: 1px solid #eef0f3; border-radius: 8px; font-size: 12px;
+    font-family: ui-monospace, Consolas, monospace; color: #4b5563;
+  }
+  .trace .label { color: #9ca3af; margin-right: 6px; }
+  .trace .step {
+    display: inline-block; background: #e0e7ff; color: #3730a3;
+    padding: 1px 7px; border-radius: 6px; margin: 2px 3px 2px 0;
+  }
+  .trace .step.refuse { background: #fef3c7; color: #92400e; }
+  .trace .step.degraded { background: #fee2e2; color: #991b1b; }
+
+  .status {
+    display: flex; align-items: center; gap: 8px;
+    color: #888; font-size: 13px; margin-bottom: 8px;
+  }
+  .spinner {
+    width: 13px; height: 13px; border: 2px solid #d0d5dd;
+    border-top-color: #1a73e8; border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status.done .spinner { display: none; }
+
+  .sources { margin-top: 12px; border-top: 1px dashed #e5e7eb; padding-top: 10px; }
+  .sources summary {
+    cursor: pointer; color: #1a73e8; font-size: 13px; user-select: none; font-weight: 500;
+  }
+  .src {
+    background: #fafbfc; border: 1px solid #eef0f3; border-radius: 8px;
+    padding: 10px 12px; margin-top: 8px; font-size: 12.5px;
+  }
+  .src .hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+  .src .idx {
+    background: #1a73e8; color: #fff; font-size: 11.5px; font-weight: 700;
+    padding: 0 7px; border-radius: 6px;
+  }
+  .src .meta { color: #6b7280; font-size: 11.5px; }
+  .src .cid {
+    font-family: ui-monospace, Consolas, monospace; color: #9ca3af; font-size: 11px;
+    cursor: help; border-bottom: 1px dotted #d1d5db;
+  }
+  .src .snip { color: #374151; white-space: pre-wrap; }
+
+  .input-area {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(245,246,248,.96); backdrop-filter: blur(6px);
+    padding: 12px 20px; border-top: 1px solid #e5e7eb;
+  }
+  .input-inner { max-width: 880px; margin: 0 auto; display: flex; gap: 10px; }
+  #q {
+    flex: 1; padding: 12px 14px; font-size: 15px;
+    border: 1px solid #d0d5dd; border-radius: 10px; outline: none;
+  }
+  #q:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,.12); }
+  #send {
+    padding: 12px 24px; font-size: 15px; cursor: pointer; background: #1a73e8;
+    color: #fff; border: none; border-radius: 10px; font-weight: 500;
+  }
+  #send:disabled { background: #a8c7fa; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>河南专升本 Agent</h1>
+  <div class="sub">
+    LangGraph · 路由决策 · RAG 工具调用 ·
+    <a href="/docs" target="_blank">API 文档</a> ·
+    <a href="/health" target="_blank">健康检查</a>
+  </div>
+</header>
+
+<div class="bar">
+  <span class="mode">Agent 会先判断问题类型：</span>
+  <label><input type="radio" name="mode" value="agent" checked> <strong>Agent 模式</strong>（路由+工具）</label>
+  <label><input type="radio" name="mode" value="rag"> 直连 RAG（跳过路由）</label>
+</div>
+
+<div class="examples">
+  <button onclick="ask('河南专升本考试考哪几科？')">考哪几科（→ ask）</button>
+  <button onclick="ask('2026年河南专升本录取控制分数线是多少？')">分数线（→ search）</button>
+  <button onclick="ask('我考了230分能上公办吗？')">230分能上公办吗（→ refuse）</button>
+  <button onclick="ask('退役大学生士兵免试专升本怎么报名？')">免试报名（→ ask）</button>
+  <button onclick="ask('英语怎么从60提到100？')">备考建议（→ refuse）</button>
+</div>
+
+<div id="chat"></div>
+
+<div class="input-area">
+  <div class="input-inner">
+    <input id="q" type="text" placeholder="输入问题，Agent 会决定怎么回答…" autocomplete="off">
+    <button id="send">发送</button>
+  </div>
+</div>
+
+<script>
+const chatEl = document.getElementById('chat');
+const qEl = document.getElementById('q');
+const sendBtn = document.getElementById('send');
+let busy = false;
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function scrollBottom() {
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+function getMode() {
+  return document.querySelector('input[name=mode]:checked').value;
+}
+
+async function ask(question) {
+  if (busy || !question) return;
+  busy = true;
+  sendBtn.disabled = true;
+  qEl.value = '';
+
+  const turn = el('div', 'turn');
+  turn.appendChild(el('div', 'q', question));
+
+  const ab = el('div', 'a');
+  const status = el('div', 'status');
+  status.appendChild(el('div', 'spinner'));
+  const statusText = el('span', null, getMode() === 'agent' ? 'Agent 正在思考…' : '正在检索…');
+  status.appendChild(statusText);
+  ab.appendChild(status);
+  const md = el('div', 'md');
+  ab.appendChild(md);
+  turn.appendChild(ab);
+  chatEl.appendChild(turn);
+  scrollBottom();
+
+  const t0 = performance.now();
+  const mode = getMode();
+  const url = mode === 'agent' ? '/agent' : 'http://43.128.31.138/chat';
+  const body = mode === 'agent'
+    ? { question }
+    : { question, mode: 'fast' };
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+    const data = await resp.json();
+    const elapsed = Math.round(performance.now() - t0);
+
+    status.classList.add('done');
+
+    if (mode === 'agent') {
+      statusText.textContent =
+        `完成 · 路由=${data.route} · ${data.elapsed_ms}ms · 来源 ${(data.sources || []).length} 条` +
+        (data.degraded ? ' · 降级' : '');
+
+      // 答案
+      if (window.marked) md.innerHTML = marked.parse(data.answer || '');
+      else md.textContent = data.answer || '';
+
+      // 降级 / 拒答标记
+      if (data.degraded) ab.classList.add('degraded');
+      else if (data.route === 'refuse') ab.classList.add('refused');
+
+      // Agent 轨迹（可观测性）
+      if (data.trace && data.trace.length) {
+        const tr = el('div', 'trace');
+        tr.appendChild(el('span', 'label', '轨迹'));
+        data.trace.forEach(s => {
+          const cls = s.includes('refuse') ? 'step refuse'
+            : s.includes('degraded') || s.includes('failed') ? 'step degraded'
+            : 'step';
+          tr.appendChild(el('span', cls, s));
+        });
+        ab.insertBefore(tr, md);
+      }
+
+      // 来源
+      if (data.sources && data.sources.length) renderSources(ab, data.sources);
+
+    } else {
+      // 直连 RAG
+      statusText.textContent = `完成 · ${data.latency_ms || elapsed}ms · 来源 ${(data.sources || []).length} 条`;
+      if (window.marked) md.innerHTML = marked.parse(data.answer || '');
+      else md.textContent = data.answer || '';
+      if (data.refused) ab.classList.add('refused');
+      if (data.sources && data.sources.length) renderSources(ab, data.sources);
+    }
+
+  } catch (e) {
+    statusText.textContent = '失败：' + e.message;
+    ab.classList.add('degraded');
+  } finally {
+    busy = false;
+    sendBtn.disabled = false;
+    qEl.focus();
+    scrollBottom();
+  }
+}
+
+function renderSources(container, sources) {
+  const wrap = el('details', 'sources');
+  wrap.appendChild(el('summary', null, `📚 引用来源（${sources.length} 条）`));
+  sources.forEach((s, i) => {
+    const box = el('div', 'src');
+    const hdr = el('div', 'hdr');
+    hdr.appendChild(el('span', 'idx', `[${i + 1}]`));
+    const meta = el('div', 'meta');
+    meta.appendChild(document.createTextNode(
+      (s.source || '-') + ' · ' + (s.doc_type || '-') + ' · score ' + s.score + ' · '));
+    const cid = el('span', 'cid', s.chunk_id);
+    cid.title = '文档块标识';
+    meta.appendChild(cid);
+    hdr.appendChild(meta);
+    box.appendChild(hdr);
+    box.appendChild(el('div', 'snip', (s.snippet || s.text || '').slice(0, 400)));
+    wrap.appendChild(box);
+  });
+  container.appendChild(wrap);
+}
+
+sendBtn.addEventListener('click', () => ask(qEl.value.trim()));
+qEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.isComposing) ask(qEl.value.trim());
+});
+</script>
+</body>
+</html>

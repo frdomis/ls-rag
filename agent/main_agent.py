@@ -37,7 +37,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from langgraph.graph import END, START, StateGraph  # noqa: E402
 
 from router import explain, route  # noqa: E402
-from tools_robust import ask_rag, search_docs
+
+# W8D5：使用带重试+降级的工具（性能比 tools.py 差一点，但容错强）
+try:
+    from tools_robust import ask_with_fallback, search_docs
+    TOOLS_MODE = "robust"
+except ImportError:
+    from tools import ask_rag as _ask_rag  # 兜底
+    from tools import search_docs
+    TOOLS_MODE = "simple"
+
+    def ask_with_fallback(question, mode="fast"):
+        r = _ask_rag(question, mode)
+        return {**r, "degraded": False, "degrade_reason": ""}
 
 
 # ============================================================
@@ -53,6 +65,8 @@ class AgentState(TypedDict, total=False):
     sources: list          # 引用来源
     trace: list            # 执行轨迹（可观测性）
     elapsed_ms: int        # 总耗时
+    degraded: bool         # W8D5：是否降级
+    degrade_reason: str    # W8D5：降级原因
 
 
 REFUSE_TEXT = "未找到相关信息。本系统仅回答河南专升本政策类问题，不提供备考建议、生活信息或个人决策建议。"
@@ -75,23 +89,38 @@ def route_node(state: AgentState) -> dict:
 
 
 def ask_node(state: AgentState) -> dict:
-    """节点 2a：调 ask_rag（检索 + 生成）"""
-    print(f"  [ask] 调用 ask_rag ...")
-    result = ask_rag(state["question"])
+    """节点 2a：调 ask_with_fallback（重试 + 降级到 search）"""
+    print(f"  [ask] 调用 ask_with_fallback（含重试+降级）...")
+    result = ask_with_fallback(state["question"])
+
     if not result["ok"]:
-        print(f"    ❌ 失败：{result['error']}")
+        # 两个工具都失败
+        print(f"    ❌ 完全失败：{result.get('error', '')[:60]}")
         return {
             "tool_result": result,
-            "answer": f"服务暂时不可用（{result['error']}），请稍后重试。",
-            "sources": [],
-            "trace": state.get("trace", []) + ["ask:failed"],
+            "answer": "服务暂时不可用，请稍后重试。",
+            "sources": [],       # 空 sources → format 不会加"以下是原文"前缀
+            "degraded": True,
+            "degrade_reason": result.get("degrade_reason", "所有工具失败"),
+            "trace": state.get("trace", []) + ["ask:all_failed"],
         }
-    print(f"    ✅ {result.get('latency_ms')}ms | {len(result.get('sources', []))} 来源 | refused={result.get('refused')}")
+
+    degraded = result.get("degraded", False)
+    attempts = result.get("attempts", 1)
+    tag = "降级" if degraded else "正常"
+
+    print(f"    {'⚠️' if degraded else '✅'} {tag} | {result.get('latency_ms')}ms | "
+          f"{len(result.get('sources', []))} 来源 | 尝试 {attempts} 次")
+
     return {
         "tool_result": result,
         "answer": result.get("answer", ""),
         "sources": result.get("sources", []),
-        "trace": state.get("trace", []) + ["ask:ok"],
+        "degraded": degraded,
+        "degrade_reason": result.get("degrade_reason", ""),
+        "trace": state.get("trace", []) + [
+            f"ask:{'degraded' if degraded else 'ok'}({attempts}次)"
+        ],
     }
 
 
@@ -132,12 +161,16 @@ def format_node(state: AgentState) -> dict:
     """节点 3：整理输出"""
     r = state["route"]
     sources = state.get("sources", [])
+    degraded = state.get("degraded", False)
 
     if r == "refuse":
         out = state["answer"]
 
     elif r == "ask":
         out = state["answer"]
+        # W8D5：降级且确实有原文时才加提示（避免和"服务不可用"重复）
+        if degraded and sources:
+            out = f"⚠️ 生成服务暂时不可用，以下是检索到的原文：\n\n{out}"
 
     elif r == "search":
         # search 只给了原文，这里整理成可读列表
@@ -154,7 +187,7 @@ def format_node(state: AgentState) -> dict:
     else:
         out = state.get("answer", "")
 
-    print(f"  [format] 输出 {len(out)} 字")
+    print(f"  [format] 输出 {len(out)} 字{('（降级）' if degraded else '')}")
     return {"answer": out, "trace": state.get("trace", []) + ["format"]}
 
 
@@ -233,6 +266,8 @@ def run_agent(question: str) -> dict:
         "route_reason": result.get("route_reason", ""),
         "trace": result.get("trace", []),
         "elapsed_ms": elapsed,
+        "degraded": result.get("degraded", False),
+        "degrade_reason": result.get("degrade_reason", ""),
     }
 
 
@@ -258,10 +293,12 @@ def main():
         print(f"[来源] {len(r['sources'])} 条")
         print(f"[轨迹] {' → '.join(r['trace'])}")
         print(f"[耗时] {r['elapsed_ms']}ms")
+        if r.get("degraded"):
+            print(f"[⚠️ 降级] {r.get('degrade_reason', '')}")
         return
 
     print("=" * 78)
-    print("Agent 端到端测试（5 个用例）")
+    print(f"Agent 端到端测试（5 个用例）| 工具模式：{TOOLS_MODE}")
     print("=" * 78)
 
     passed = 0
@@ -276,7 +313,8 @@ def main():
         passed += ok
 
         print(f"  答案：{r['answer'][:120].replace(chr(10), ' ')}{'...' if len(r['answer']) > 120 else ''}")
-        print(f"  {'✅' if ok else '❌'} 路由={r['route']}（期望 {expect}）| 来源 {len(r['sources'])} 条 | {r['elapsed_ms']}ms")
+        dag = f" | ⚠️降级({r.get('degrade_reason', '')[:20]})" if r.get("degraded") else ""
+        print(f"  {'✅' if ok else '❌'} 路由={r['route']}（期望 {expect}）| 来源 {len(r['sources'])} 条 | {r['elapsed_ms']}ms{dag}")
         print(f"  轨迹：{' → '.join(r['trace'])}")
 
     print(f"\n{'=' * 78}")
