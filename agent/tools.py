@@ -23,10 +23,11 @@ import requests
 # 后端地址：优先环境变量，默认本地
 BASE = os.environ.get("RAG_BASE", "http://127.0.0.1:8000").rstrip("/")
 
-# 超时配置（秒）
-TIMEOUT_SEARCH = (5, 20)
-TIMEOUT_CHAT = (5, 90)
-TIMEOUT_HEALTH = (3, 8)
+# 超时配置（秒）：(连接超时, 读取超时)
+# ⚠️ 跨境到香港服务器，TCP 连接要 2-5 秒，3 秒会误判"不可达"
+TIMEOUT_SEARCH = (10, 25)
+TIMEOUT_CHAT = (10, 100)
+TIMEOUT_HEALTH = (10, 15)
 
 
 # ============================================================
