@@ -37,7 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from langgraph.graph import END, START, StateGraph  # noqa: E402
 
 from router import explain, route  # noqa: E402
-from tools import ask_rag, search_docs  # noqa: E402
+from tools_robust import ask_rag, search_docs
 
 
 # ============================================================
